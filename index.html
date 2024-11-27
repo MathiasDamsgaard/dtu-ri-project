@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Final Project</title>
+        <script type="text/javascript" src="../common/MV.js"></script>
+        <script type="text/javascript" src="../common/OBJParser_interleaved.js"></script>
+        <script type="text/javascript" src="../common/BspTree_interleaved.js"></script>
+        <script type="text/javascript" src="../common/Aabb.js"></script>
+        <script type="text/javascript" src="script.js"></script>
+    </head>
+    <body>
+        <p>Zoom and aspect ration can both be changed using the key arrows.</p>
+        <canvas id="webgpu-canvas" width="512" height="512">
+            Please use a browser that supports HTML5 canvas.
+        </canvas>
+        <br>
+        <select id="glassMenu" size="1">
+            <option value="0" selected>Default</option>
+            <option value="1">Lambertian</option>
+            <option value="2">Phong</option>
+            <option value="3">Mirror</option>
+            <option value="4">Refraction</option>
+            <option value="5">Glossy</option>
+            <option value="6">Transparent</option>
+        </select>
+
+        <select id="matteMenu" size="1">
+            <option value="0">Default</option>
+            <option value="1" selected>Lambertian</option>
+        </select>
+
+        <select id="useTexture" size="1">
+            <option value="0" selected>No</option>
+            <option value="1">Yes</option>
+        </select>
+        <br>
+        <select id="addressmode" size="2">
+            <option value="0">clamp-to-edge</option>
+            <option value="1" selected>repeat</option>
+        </select>
+
+        <select id="filtermode" size="2">
+            <option value="0">nearest</option>
+            <option value="1" selected>linear</option>
+        </select>
+
+        <br>
+        <input type="checkbox" id="prog_update" checked> Progressive Updating
+    </body>
+</html>
