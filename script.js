@@ -97,8 +97,10 @@ async function main() {
     var aspect = canvas.width/canvas.height;
     var cam_const = 1;
     var gamma = 2.25;
+    var z_d = 5.0;
+    var l = 2.0;
 
-    var uniforms_f = new Float32Array([aspect, cam_const, gamma]);
+    var uniforms_f = new Float32Array([aspect, cam_const, gamma, z_d, l]);
     const uniformBuffer_f = device.createBuffer({
         size: uniforms_f.byteLength, // number of bytes
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -195,10 +197,10 @@ async function main() {
             { binding: 3, resource: { buffer: indicesBuffer }},
             { binding: 4, resource: { buffer: materialsBuffer }},
             { binding: 5, resource: { buffer: light_indicesBuffer }},
-            { binding: 6, resource: { buffer: buffers.aabb }},
-            { binding: 7, resource: { buffer: buffers.treeIds }},
-            { binding: 8, resource: { buffer: buffers.bspTree }},
-            { binding: 9, resource: { buffer: buffers.bspPlanes }},
+            // { binding: 6, resource: { buffer: buffers.aabb }},
+            // { binding: 7, resource: { buffer: buffers.treeIds }},
+            // { binding: 8, resource: { buffer: buffers.bspTree }},
+            // { binding: 9, resource: { buffer: buffers.bspPlanes }},
             { binding: 10, resource: textures.renderDst.createView() }
         ],
     });

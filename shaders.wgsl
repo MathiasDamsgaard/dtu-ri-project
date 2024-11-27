@@ -39,7 +39,9 @@ struct Light {
 struct Uniforms_f {
     aspect: f32,
     cam_const: f32,
-    gamma: f32
+    gamma: f32,
+    z_d: f32,
+    l: f32
 };
 
 struct Uniforms_ui {
@@ -109,23 +111,42 @@ fn main_vs(@builtin(vertex_index) VertexIndex : u32) -> VSOut
     return vsOut;
 }
 
-fn get_camera_ray(ipcoords: vec2f) -> Ray {
+fn get_camera_ray(ipcoords: vec2f, t: ptr<function, u32>) -> Ray {
     // Scene description
-    const e = vec3f(277.0, 275.0, -570.0); // eye point
-    const p = vec3f(277.0, 275.0, 0.0); // look-at point (view point)
+    // const e = vec3f(277.0, 275.0, -570.0); // eye point
+    // const p = vec3f(277.0, 275.0, 0.0); // look-at point (view point)
+    // const u = vec3f(0.0, 1.0, 0.0); // up-vector (up direction)
+    const e = vec3f(0.0, 2.0, 5.0); // eye point
+    const p = vec3f(0.0, 0.0, 0.0); // look-at point (view point)
     const u = vec3f(0.0, 1.0, 0.0); // up-vector (up direction)
     let d = uniforms_f.cam_const; // camera constant
+    let z_d = uniforms_f.z_d; // distance to the focal plane
+    let l = uniforms_f.l; // lens radius
+    let f = 1.0 / (1.0 / d + 1.0 / z_d); // focal length
+    let delta = f * l / (z_d - f); // diameter of circle of confusion
 
     // Compute camera coordinate system (WGSL has vector operations like normalize and cross)
     let v = normalize(p - e);
     let b1 = normalize(cross(v, u));
     let b2 = cross(b1, v);
     let w = normalize(ipcoords.x*b1 + ipcoords.y*b2 + d*v);
+    
+    let fp = e + z_d * w; // focal point
+    
+    let r = sqrt(rnd(t)) * (delta/2.0); // sqrt to ensure uniform distribution in the circle
+    let theta = 2.0 * PI * rnd(t);
+    
+    // Convert to cartesian coordinates
+    let x = r * cos(theta);
+    let y = r * sin(theta);
+
+    // Transform to the vector space of the camera
+    let offset = x * b1 + y * b2;
 
     // Implement ray generation
     var ray: Ray;
-    ray.origin = e;
-    ray.direction = w;
+    ray.origin = e + offset;
+    ray.direction = normalize(fp - ray.origin); // direction vector from the eye to the focal point
     ray.tmin = 0.0;
     ray.tmax = 1.0e16;
     return ray;
@@ -609,31 +630,96 @@ fn shade(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, t: ptr<function, u3
     }
 }
 
-fn intersect_scene(r: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool{
-    if (!intersect_min_max(r)) { return false; }
+// fn intersect_scene(r: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool{
+//     if (!intersect_min_max(r)) { return false; }
 
-    const center_s_left = vec3f(420.0, 90.0, 370.0);
-    const radius_s_left = 90.0;
-    if (intersect_sphere(*r, hit, center_s_left, radius_s_left)) {
-        hit.shader = 3; // mirror
-        hit.ext_coeff = vec3f(0.0);
-        r.tmax = hit.dist;
+//     const center_s_left = vec3f(420.0, 90.0, 370.0);
+//     const radius_s_left = 90.0;
+//     if (intersect_sphere(*r, hit, center_s_left, radius_s_left)) {
+//         hit.shader = 3; // mirror
+//         hit.ext_coeff = vec3f(0.0);
+//         r.tmax = hit.dist;
+//     }
+
+//     const center_s_right = vec3f(130.0, 90.0, 250.0);
+//     const radius_s_right = 90.0;
+//     if (intersect_sphere(*r, hit, center_s_right, radius_s_right)) {
+//         hit.shader = 6; // transparent
+//         hit.ext_coeff = vec3f(1e-3, 0.9, 1e-3);
+//         r.tmax = hit.dist;
+//     }
+
+//     if (intersect_trimesh(r, hit)) {
+//         hit.ext_coeff = vec3f(0.0);
+//         r.tmax = hit.dist;
+//     }
+
+//     return (*hit).has_hit;
+// }
+
+fn intersect_scene(ray: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool {
+
+    // Add 3 more spheres, on the same x,y plane, but different z values
+
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 3.0), 0.5)) {
+        (*hit).diffuse = vec3f(0.0, 0.0, 0.0);
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = 1;
+        return true;
     }
 
-    const center_s_right = vec3f(130.0, 90.0, 250.0);
-    const radius_s_right = 90.0;
-    if (intersect_sphere(*r, hit, center_s_right, radius_s_right)) {
-        hit.shader = 6; // transparent
-        hit.ext_coeff = vec3f(1e-3, 0.9, 1e-3);
-        r.tmax = hit.dist;
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 1.5), 0.5)) {
+        (*hit).diffuse = vec3f(0.0, 0.0, 0.0);
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = 1;
+        return true;
     }
 
-    if (intersect_trimesh(r, hit)) {
-        hit.ext_coeff = vec3f(0.0);
-        r.tmax = hit.dist;
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 0.0), 0.5)) {
+        (*hit).diffuse = vec3f(0.0, 0.0, 0.0);
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = 1;
+        return true;
     }
 
-    return (*hit).has_hit;
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -1.5), 0.5)) {
+        (*hit).diffuse = vec3f(0.0, 0.0, 0.0);
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = 1;
+        return true;
+    }
+
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -3.0), 0.5)) {
+        (*hit).diffuse = vec3f(0.0, 0.0, 0.0);
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = 1;
+        return true;
+    }
+
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -4.5), 0.5)) {
+        (*hit).diffuse = vec3f(0.0, 0.0, 0.0);
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = 1;
+        return true;
+    }
+
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -6.0), 0.5)) {
+        (*hit).diffuse = vec3f(0.0, 0.0, 0.0);
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = 1;
+        return true;
+    }
+
+
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 5.0, 0.0), 0.5)) {
+        (*hit).diffuse = vec3f(1.0, 1.0, 1.0);
+        (*hit).ambient = vec3f(0.0, 0.0, 0.0);
+        (*hit).shader = 1;
+        return true;
+    }
+
+
+    return false;
 }
 
 fn texture_nearest(texture: texture_2d<f32>, texcoords: vec2f, repeat: bool) -> vec3f {
@@ -700,7 +786,7 @@ fn main_fs(@builtin(position) fragcoord: vec4f, @location(0) coords: vec2f) -> F
     let jitter = vec2f(rnd(&t), rnd(&t))/f32(uniforms_ui.height);
     
     var uv = vec2f(coords.x*uniforms_f.aspect*0.5f, coords.y*0.5f);
-    var r = get_camera_ray(uv + jitter);
+    var r = get_camera_ray(uv + jitter, &t);
     var result = raytrace(&r, &t).rgb;
 
     // Progressive update of image
