@@ -130,12 +130,12 @@ fn get_camera_ray(ipcoords: vec2f, t: ptr<function, u32>) -> Ray {
     let b1 = normalize(cross(v, u));
     let b2 = cross(b1, v);
     let w = normalize(ipcoords.x*b1 + ipcoords.y*b2 + d*v);
-    
+
     let fp = e + z_d * w; // focal point
-    
+
     let r = sqrt(rnd(t)) * (delta/2.0); // sqrt to ensure uniform distribution in the circle
     let theta = 2.0 * PI * rnd(t);
-    
+
     // Convert to cartesian coordinates
     let x = r * cos(theta);
     let y = r * sin(theta);
@@ -150,6 +150,34 @@ fn get_camera_ray(ipcoords: vec2f, t: ptr<function, u32>) -> Ray {
     ray.tmin = 0.0;
     ray.tmax = 1.0e16;
     return ray;
+}
+
+fn sample_ideal_projector(pos: vec3f) -> Light {
+    const position = vec3f(0.0, 7.0, 6.0);
+    const up = vec3f(0.0, 1.0, 0.0);
+    const lookAt = vec3f(0.0, 0.0, 0.0);
+
+    const right = cross(up, lookAt);
+
+    let v = normalize(position - pos);
+    const d = 1.0;
+
+    let y = d * tan(acos(dot(up, v)));
+    let x = d * tan(acos(dot(right, v)));
+
+    if(x < 10.0 && x > -10.0 && y < 10.0 && y > -10.0) {
+            const intensity = vec3f(PI, PI, PI);
+            var l_i = intensity / pow(length(position - pos), 2);
+            var w_i = normalize(position - pos);
+            var dist = length(position - pos);
+            return Light(l_i, w_i, dist);
+    } else {
+            const intensity = vec3f(PI, PI, PI);
+            var l_i = vec3f(0.0);
+            var w_i = normalize(position - pos);
+            var dist = length(position - pos);
+            return Light(l_i, w_i, dist);
+    }
 }
 
 
@@ -184,7 +212,7 @@ fn sample_area_light(hit: ptr<function, HitInfo>, t: ptr<function, u32>) -> Ligh
     let n2 = attributes[meshFaces[lightIndices[idx]].z].normal.xyz;
 
     let light_emission = materials[meshFaces[lightIndices[idx]].w].emission.rgb;
-    
+
     // Sample a random point on the light source
     var rnd_1 = rnd(t); var rnd_2 = rnd(t);
 
@@ -290,7 +318,7 @@ fn intersect_plane(r: Ray, hit: ptr<function, HitInfo>, position: vec3f, normal:
         var v = dot(hit.position - 0, plane_onb.binormal);
         var texture_scaling = 0.2/10;
         hit.texcoords = vec2f(u, v)*texture_scaling;
-        
+
         if (dot(normal, r.direction) > 0.0) {
             hit.normal = -normalize(normal);
         } else {
@@ -335,7 +363,7 @@ fn intersect_triangle(r: Ray, hit: ptr<function, HitInfo>, v_idx: u32) -> bool {
             hit.has_hit = true;
             hit.dist = tp;
             hit.position = r.origin + tp*r.direction;
-            
+
             var interpolated_normal = alpha*normals[0] + beta*normals[1] + gamma*normals[2];
             if (dot(n, r.direction) > 0.0) {
                 hit.normal = -normalize(interpolated_normal);
@@ -461,8 +489,9 @@ fn lambertian(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, t: ptr<functio
         result += hit.ambient;
     }
 
-    //var light = sample_direction_light();
+    // var light = sample_direction_light();
     var light = sample_area_light(hit, t);
+    light = sample_ideal_projector(hit.position);
 
     // shadow and check if there is anything between the hit and light source
     var epsilon = 1e-1;
@@ -497,7 +526,7 @@ fn lambertian(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, t: ptr<functio
     } else {
         hit.has_hit = true;
     }
-    
+
     return result;
 }
 
@@ -535,7 +564,7 @@ fn mirror(r: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> vec3f {
 fn refraction(r: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> vec3f {
     var index = 1.5; // refractive index
     var n_t = 0.0; var n_i = 0.0;
-    
+
     if (dot(hit.normal, -r.direction) > 0.0) {
         n_t = index; n_i = 1.0;
     } else {
@@ -593,7 +622,7 @@ fn transparent(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, t: ptr<functi
         if (xi < R) {
             // reflection
             var reflection_direction = reflect(-(-r.direction), hit.normal);
-            (*r).direction = reflection_direction;    
+            (*r).direction = reflection_direction;
         } else {
             // refraction
             var wt = (n_i / n_t) * (cos_theta_i * hit.normal - (-r.direction)) - hit.normal * cos_theta_t;
@@ -662,58 +691,66 @@ fn intersect_scene(ray: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool
     // Add 3 more spheres, on the same x,y plane, but different z values
 
     if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 3.0), 0.5)) {
-        (*hit).diffuse = vec3f(0.0, 0.0, 0.0);
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
         (*hit).shader = 1;
+        (*hit).emit = false;
+
         return true;
     }
 
     if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 1.5), 0.5)) {
-        (*hit).diffuse = vec3f(0.0, 0.0, 0.0);
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
         (*hit).shader = 1;
+        (*hit).emit = false;
         return true;
     }
 
     if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 0.0), 0.5)) {
-        (*hit).diffuse = vec3f(0.0, 0.0, 0.0);
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
         (*hit).shader = 1;
+        (*hit).emit = false;
         return true;
     }
 
     if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -1.5), 0.5)) {
-        (*hit).diffuse = vec3f(0.0, 0.0, 0.0);
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
         (*hit).shader = 1;
+        (*hit).emit = false;
         return true;
     }
 
     if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -3.0), 0.5)) {
-        (*hit).diffuse = vec3f(0.0, 0.0, 0.0);
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
         (*hit).shader = 1;
+        (*hit).emit = false;
         return true;
     }
 
     if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -4.5), 0.5)) {
-        (*hit).diffuse = vec3f(0.0, 0.0, 0.0);
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
         (*hit).shader = 1;
+        (*hit).emit = false;
         return true;
     }
 
     if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -6.0), 0.5)) {
-        (*hit).diffuse = vec3f(0.0, 0.0, 0.0);
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
         (*hit).shader = 1;
+        (*hit).emit = false;
         return true;
     }
 
 
     if(intersect_sphere(*ray, hit, vec3f(0.0, 5.0, 0.0), 0.5)) {
-        (*hit).diffuse = vec3f(1.0, 1.0, 1.0);
-        (*hit).ambient = vec3f(0.0, 0.0, 0.0);
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
         (*hit).shader = 1;
         return true;
     }
@@ -735,7 +772,7 @@ fn texture_linear(texture: texture_2d<f32>, texcoords: vec2f, repeat: bool) -> v
     let res = textureDimensions(texture);
     let st = select(clamp(texcoords, vec2f(0), vec2f(1)), texcoords - floor(texcoords), repeat);
     let ab = st*vec2f(res);
-    
+
     // Calculate the integer and fractional parts of the texture coordinates
     let ab_floor = floor(ab);
     let ab_frac = ab - ab_floor;
@@ -784,7 +821,7 @@ fn main_fs(@builtin(position) fragcoord: vec4f, @location(0) coords: vec2f) -> F
     let launch_idx = u32(fragcoord.y)*uniforms_ui.width + u32(fragcoord.x);
     var t = tea(launch_idx, uniforms_ui.frame);
     let jitter = vec2f(rnd(&t), rnd(&t))/f32(uniforms_ui.height);
-    
+
     var uv = vec2f(coords.x*uniforms_f.aspect*0.5f, coords.y*0.5f);
     var r = get_camera_ray(uv + jitter, &t);
     var result = raytrace(&r, &t).rgb;
