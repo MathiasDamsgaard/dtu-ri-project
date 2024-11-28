@@ -185,7 +185,11 @@ async function main() {
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
     device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
-    
+
+    // create texture for the projector
+
+    const texture = await load_texture(device, './data/img.jpg');
+    const textureView = texture.createView();
 
     // Create bind group
     const bindGroup = device.createBindGroup({
@@ -193,15 +197,16 @@ async function main() {
         entries: [
             { binding: 0, resource: { buffer: uniformBuffer_f }},
             { binding: 1, resource: { buffer: uniformBuffer_ui }},
-            { binding: 2, resource: { buffer: attributesBuffer }},
-            { binding: 3, resource: { buffer: indicesBuffer }},
-            { binding: 4, resource: { buffer: materialsBuffer }},
-            { binding: 5, resource: { buffer: light_indicesBuffer }},
+            // { binding: 2, resource: { buffer: attributesBuffer }},
+            // { binding: 3, resource: { buffer: indicesBuffer }},
+            // { binding: 4, resource: { buffer: materialsBuffer }},
+            // { binding: 5, resource: { buffer: light_indicesBuffer }},
             // { binding: 6, resource: { buffer: buffers.aabb }},
             // { binding: 7, resource: { buffer: buffers.treeIds }},
             // { binding: 8, resource: { buffer: buffers.bspTree }},
             // { binding: 9, resource: { buffer: buffers.bspPlanes }},
-            { binding: 10, resource: textures.renderDst.createView() }
+            { binding: 10, resource: textures.renderDst.createView() },
+            { binding: 11, resource: textureView }
         ],
     });
 

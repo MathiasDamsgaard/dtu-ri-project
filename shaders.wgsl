@@ -94,6 +94,8 @@ struct Attribute {
 
 @group(0) @binding(10) var renderTexture: texture_2d<f32>;
 
+@group(0) @binding(11) var projectorTexture: texture_2d<f32>;
+
 const PI = 3.14159265359;
 const MAX_LEVEL = 20u;
 const BSP_LEAF = 3u;
@@ -152,32 +154,79 @@ fn get_camera_ray(ipcoords: vec2f, t: ptr<function, u32>) -> Ray {
     return ray;
 }
 
+fn get_plane_intersection(
+    r_origin: vec3f,
+    r_dir: vec3f,
+    p_pos:vec3f,
+    p_norm: vec3f,
+    intersection: ptr<function, vec3f>
+    ) -> bool {
+    var denominator = dot(r_dir, p_norm);
+    var epsilon = 0.00001;
+
+    if (abs(denominator) <= epsilon) {
+        // the line is parallel to the plane
+        return false;
+    }
+
+    var tp = dot(p_pos - r_origin, p_norm) / denominator;
+
+    // if(tp < 0.0) {
+    //     // the intersection is behind the projector
+    //     return false;
+    // }
+
+    *intersection = r_origin + tp*r_dir;
+    return true;
+}
+
+
 fn sample_ideal_projector(pos: vec3f) -> Light {
-    const position = vec3f(0.0, 7.0, 6.0);
-    const up = vec3f(0.0, 1.0, 0.0);
+    const position = vec3f(10.0, 5.0, 0.0);
+    const updir = vec3f(1.0, 0.0, 0.0);
     const lookAt = vec3f(0.0, 0.0, 0.0);
 
-    const right = cross(up, lookAt);
+    let up = normalize(updir - dot(updir, lookAt)*lookAt);
+
+    let plane_norm = normalize(lookAt - position);
+    let right = normalize(cross(plane_norm, up));
 
     let v = normalize(position - pos);
-    const d = 1.0;
+    const d = 20.0;
 
-    let y = d * tan(acos(dot(up, v)));
-    let x = d * tan(acos(dot(right, v)));
+    var intersection = vec3f(0.0);
 
-    if(x < 10.0 && x > -10.0 && y < 10.0 && y > -10.0) {
-            const intensity = vec3f(PI, PI, PI);
-            var l_i = intensity / pow(length(position - pos), 2);
-            var w_i = normalize(position - pos);
-            var dist = length(position - pos);
-            return Light(l_i, w_i, dist);
-    } else {
-            const intensity = vec3f(PI, PI, PI);
-            var l_i = vec3f(0.0);
-            var w_i = normalize(position - pos);
-            var dist = length(position - pos);
-            return Light(l_i, w_i, dist);
+    let plane_real_pos = position + normalize(plane_norm)*d;
+
+    let has_intersection = get_plane_intersection(pos, v, plane_real_pos, plane_norm, &intersection);
+
+    if(!has_intersection) {
+        return Light(vec3f(0.0), normalize(position-pos), 1.0);
     }
+
+    let proj = intersection - plane_real_pos;
+    let x = dot(proj, right);
+    let y = dot(proj, up);
+
+    if(x < -1.0 || x > 1.0 || y < -1.0 || y > 1.0) {
+        return Light(vec3f(0.0), normalize(position-pos), 1.0);
+    }
+
+    let xs = (-x + 1.0) / 2.0;
+    let ys = (-y + 1.0) / 2.0;
+
+    // multiply by texture size and cast to int
+    let ut = xs * 640.0;
+    let vt = ys * 440.0;
+
+
+    let col = textureLoad(projectorTexture, vec2i(i32(ut), i32(vt)), 0).rgb;
+
+    let intensity = vec3f(col * PI*100);
+    var l_i = intensity / pow(length(position - pos), 2);
+    var w_i = normalize(position - pos);
+    var dist = length(position - pos);
+    return Light(l_i, w_i, dist);
 }
 
 
@@ -191,10 +240,10 @@ fn sample_point_light(pos: vec3f) -> Light {
 }
 
 fn sample_direction_light() -> Light {
-    const emission = vec3f(PI, PI, PI);
-    const direction = normalize(vec3f(-1.0));
+    const emission = vec3f(0.1);
+    const direction = normalize(vec3f(0.0, 10, 100));
     var dist = 1.0e16;
-    return Light(emission, -direction, dist);
+    return Light(emission, direction, dist);
 }
 
 // Previously sample_emissive_triangle
@@ -489,19 +538,25 @@ fn lambertian(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, t: ptr<functio
         result += hit.ambient;
     }
 
-    // var light = sample_direction_light();
-    var light = sample_area_light(hit, t);
-    light = sample_ideal_projector(hit.position);
+    const LIGHTS = 2u;
+    var dirlight = sample_direction_light();
+    // var area = sample_area_light(hit, t);
+    var proj = sample_ideal_projector(hit.position);
 
-    // shadow and check if there is anything between the hit and light source
-    var epsilon = 1e-1;
-    var shadow_ray = Ray(hit.position, light.w_i, epsilon, light.dist - epsilon);
-    var shadow_hit = HitInfo(false, 0.0, vec3f(0.0), vec3f(0.0), 0, vec3f(0.0), vec3f(0.0), vec2f(0.0), false, vec3f(1.0), vec3f(0.0));
+    // create an array of lights and loop through them
+    var lights = array<Light, LIGHTS>(proj, dirlight);
+    for(var i = 0u; i < LIGHTS; i++) {
+        var light = lights[i];
+        // shadow and check if there is anything between the hit and light source
+        var epsilon = 1e-1;
+        var shadow_ray = Ray(hit.position, light.w_i, epsilon, light.dist - epsilon);
+        var shadow_hit = HitInfo(false, 0.0, vec3f(0.0), vec3f(0.0), 0, vec3f(0.0), vec3f(0.0), vec2f(0.0), false, vec3f(1.0), vec3f(0.0));
 
-    if (!intersect_scene(&shadow_ray, &shadow_hit)) {
-        // compute lambertian shading
-        var l_o = hit.diffuse / PI * light.l_i * max(0.0, dot(hit.normal, light.w_i));
-        result += l_o;
+        if (!intersect_scene(&shadow_ray, &shadow_hit)) {
+            // compute lambertian shading
+            var l_o = hit.diffuse / PI * light.l_i * max(0.0, dot(hit.normal, light.w_i));
+            result += l_o;
+        }
     }
 
     // Indirect illumination
@@ -688,70 +743,81 @@ fn shade(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, t: ptr<function, u3
 
 fn intersect_scene(ray: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool {
 
+    // Add a plane below the spheres
     // Add 3 more spheres, on the same x,y plane, but different z values
 
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 3.0), 0.5)) {
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 3.0), 0.5)) {
+    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+    //     (*ray).tmax = (*hit).dist;
+    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).shader = 1;
+    //     (*hit).emit = false;
+
+    //     return true;
+    // }
+
+    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 1.5), 0.5)) {
+    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+    //     (*ray).tmax = (*hit).dist;
+    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).shader = 1;
+    //     (*hit).emit = false;
+    //     return true;
+    // }
+
+    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 0.0), 0.5)) {
+    //     (*ray).tmax = (*hit).dist;
+    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).shader = 1;
+    //     (*hit).emit = false;
+    //     return true;
+    // }
+
+    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -1.5), 0.5)) {
+    //     (*ray).tmax = (*hit).dist;
+    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).shader = 1;
+    //     (*hit).emit = false;
+    //     return true;
+    // }
+
+    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -3.0), 0.5)) {
+    //     (*ray).tmax = (*hit).dist;
+    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).shader = 1;
+    //     (*hit).emit = false;
+    //     return true;
+    // }
+
+    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -4.5), 0.5)) {
+    //     (*ray).tmax = (*hit).dist;
+    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).shader = 1;
+    //     (*hit).emit = false;
+    //     return true;
+    // }
+
+    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -6.0), 0.5)) {
+    //     (*ray).tmax = (*hit).dist;
+    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).shader = 1;
+    //     (*hit).emit = false;
+    //     return true;
+    // }
+
+    // why does this have to be place here? if it is placed before the spheres,
+    // everything breaks
+    if(intersect_plane(*ray, hit, vec3f(0.0, 0.0, 0.0), vec3f(0.0, 1.0, 0.0), Onb(vec3f(1.0, 0.0, 0.0), vec3f(0.0, 0.0, 1.0), vec3f(0.0, 1.0, 0.0)))) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.1, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.1, 0.1);
         (*hit).shader = 1;
         (*hit).emit = false;
-
-        return true;
-    }
-
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 1.5), 0.5)) {
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = 1;
-        (*hit).emit = false;
-        return true;
-    }
-
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 0.0), 0.5)) {
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = 1;
-        (*hit).emit = false;
-        return true;
-    }
-
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -1.5), 0.5)) {
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = 1;
-        (*hit).emit = false;
-        return true;
-    }
-
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -3.0), 0.5)) {
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = 1;
-        (*hit).emit = false;
-        return true;
-    }
-
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -4.5), 0.5)) {
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = 1;
-        (*hit).emit = false;
-        return true;
-    }
-
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -6.0), 0.5)) {
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = 1;
-        (*hit).emit = false;
-        return true;
-    }
-
-
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 5.0, 0.0), 0.5)) {
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = 1;
         return true;
     }
 
