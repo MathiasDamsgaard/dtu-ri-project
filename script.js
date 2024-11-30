@@ -98,7 +98,7 @@ async function main() {
     var cam_const = 1;
     var gamma = 2.25;
     var z_d = 5.0;
-    var l = 0.1;
+    var l = 2.0;
 
     var uniforms_f = new Float32Array([aspect, cam_const, gamma, z_d, l]);
     const uniformBuffer_f = device.createBuffer({

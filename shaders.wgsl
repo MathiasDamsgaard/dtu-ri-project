@@ -182,7 +182,7 @@ fn get_plane_intersection(
 
 
 fn sample_ideal_projector(pos: vec3f) -> Light {
-    const position = vec3f(10.0, 5.0, 0.0);
+    const position = vec3f(0.0, 6.0, 0.0);
     const updir = vec3f(1.0, 0.0, 0.0);
     const lookAt = vec3f(0.0, 0.0, 0.0);
 
@@ -192,7 +192,7 @@ fn sample_ideal_projector(pos: vec3f) -> Light {
     let right = normalize(cross(plane_norm, up));
 
     let v = normalize(position - pos);
-    const d = 20.0;
+    const d = 2.0;
 
     var intersection = vec3f(0.0);
 
@@ -241,7 +241,7 @@ fn sample_point_light(pos: vec3f) -> Light {
 
 fn sample_direction_light() -> Light {
     const emission = vec3f(0.1);
-    const direction = normalize(vec3f(0.0, 10, 100));
+    const direction = normalize(vec3f(0.0, 5, 5));
     var dist = 1.0e16;
     return Light(emission, direction, dist);
 }
@@ -746,69 +746,69 @@ fn intersect_scene(ray: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool
     // Add a plane below the spheres
     // Add 3 more spheres, on the same x,y plane, but different z values
 
-    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 3.0), 0.5)) {
-    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-    //     (*ray).tmax = (*hit).dist;
-    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).shader = 1;
-    //     (*hit).emit = false;
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 3.0), 0.5)) {
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*ray).tmax = (*hit).dist;
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = 1;
+        (*hit).emit = false;
 
-    //     return true;
-    // }
+        return true;
+    }
 
-    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 1.5), 0.5)) {
-    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-    //     (*ray).tmax = (*hit).dist;
-    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).shader = 1;
-    //     (*hit).emit = false;
-    //     return true;
-    // }
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 1.5), 0.5)) {
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*ray).tmax = (*hit).dist;
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = 1;
+        (*hit).emit = false;
+        return true;
+    }
 
-    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 0.0), 0.5)) {
-    //     (*ray).tmax = (*hit).dist;
-    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).shader = 1;
-    //     (*hit).emit = false;
-    //     return true;
-    // }
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 0.0), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = 1;
+        (*hit).emit = false;
+        return true;
+    }
 
-    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -1.5), 0.5)) {
-    //     (*ray).tmax = (*hit).dist;
-    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).shader = 1;
-    //     (*hit).emit = false;
-    //     return true;
-    // }
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -1.5), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = 1;
+        (*hit).emit = false;
+        return true;
+    }
 
-    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -3.0), 0.5)) {
-    //     (*ray).tmax = (*hit).dist;
-    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).shader = 1;
-    //     (*hit).emit = false;
-    //     return true;
-    // }
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -3.0), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = 1;
+        (*hit).emit = false;
+        return true;
+    }
 
-    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -4.5), 0.5)) {
-    //     (*ray).tmax = (*hit).dist;
-    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).shader = 1;
-    //     (*hit).emit = false;
-    //     return true;
-    // }
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -4.5), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = 1;
+        (*hit).emit = false;
+        return true;
+    }
 
-    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -6.0), 0.5)) {
-    //     (*ray).tmax = (*hit).dist;
-    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).shader = 1;
-    //     (*hit).emit = false;
-    //     return true;
-    // }
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -6.0), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = 1;
+        (*hit).emit = false;
+        return true;
+    }
 
     // why does this have to be place here? if it is placed before the spheres,
     // everything breaks
