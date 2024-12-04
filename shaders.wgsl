@@ -129,7 +129,8 @@ fn get_camera_ray(ipcoords: vec2f, t: ptr<function, u32>) -> Ray {
     // const e = vec3f(277.0, 275.0, -570.0); // eye point
     // const p = vec3f(277.0, 275.0, 0.0); // look-at point (view point)
     // const u = vec3f(0.0, 1.0, 0.0); // up-vector (up direction)
-    const e = vec3f(0.0, 2.0, 5.0); // eye point
+    // const e = vec3f(0.0, 10.0, 0.0001); // eye point
+    const e = vec3f(0.0, 3.0, 3.0); // eye point
     const p = vec3f(0.0, 0.0, 0.0); // look-at point (view point)
     const u = vec3f(0.0, 1.0, 0.0); // up-vector (up direction)
     let d = uniforms_f.cam_const; // camera constant
@@ -166,7 +167,7 @@ fn get_plane_intersection(
     p_pos:vec3f,
     p_norm: vec3f,
     intersection: ptr<function, vec3f>
-    ) -> bool {
+) -> bool {
     var denominator = dot(r_dir, p_norm);
     var epsilon = 0.00001;
 
@@ -177,10 +178,10 @@ fn get_plane_intersection(
 
     var tp = dot(p_pos - r_origin, p_norm) / denominator;
 
-    // if(tp < 0.0) {
-    //     // the intersection is behind the projector
-    //     return false;
-    // }
+    if(dot(p_norm, r_dir) > 0.0) {
+        // the plane is facing the ray
+        return false;
+    }
 
     *intersection = r_origin + tp*r_dir;
     return true;
@@ -188,9 +189,10 @@ fn get_plane_intersection(
 
 
 fn sample_ideal_projector(pos: vec3f, t: ptr<function, u32>) -> Light {
-    const position = vec3f(0.0, 6.0, 0.0);
+    const position = vec3f(0.0, 2.0, 0.0);
     const updir = vec3f(1.0, 0.0, 0.0);
     const lookAt = vec3f(0.0, 0.0, 0.0);
+    var dist = length(position - pos);
 
     let up = normalize(updir - dot(updir, lookAt)*lookAt);
 
@@ -215,7 +217,7 @@ fn sample_ideal_projector(pos: vec3f, t: ptr<function, u32>) -> Light {
     let has_intersection = get_plane_intersection(pos, v, plane_real_pos, plane_norm, &intersection);
 
     if(!has_intersection) {
-        return Light(vec3f(0.0), normalize(position-pos), 1.0);
+        return Light(vec3f(0.0), normalize(position-pos), dist);
     }
 
     let proj = intersection - plane_real_pos;
@@ -226,23 +228,22 @@ fn sample_ideal_projector(pos: vec3f, t: ptr<function, u32>) -> Light {
     y += xy.y;
 
     if(x < -1.0 || x > 1.0 || y < -1.0 || y > 1.0) {
-        return Light(vec3f(0.0), normalize(position-pos), 1.0);
+        return Light(vec3f(0.0), normalize(position-pos), dist);
     }
 
     let xs = (-x + 1.0) / 2.0;
     let ys = (-y + 1.0) / 2.0;
 
     // multiply by texture size and cast to int
-    let ut = xs * 640.0;
-    let vt = ys * 440.0;
+    let ut = xs * 512.0;
+    let vt = ys * 512.0;
 
 
     let col = textureLoad(projectorTexture, vec2i(i32(ut), i32(vt)), 0).rgb;
 
-    let intensity = vec3f(col * PI*100);
+    let intensity = vec3f(col * PI*20);
     var l_i = intensity / pow(length(position - pos), 2);
     var w_i = normalize(position - pos);
-    var dist = length(position - pos);
     return Light(l_i, w_i, dist);
 }
 
@@ -258,9 +259,9 @@ fn sample_point_light(pos: vec3f) -> Light {
 
 fn sample_direction_light() -> Light {
     const emission = vec3f(0.1);
-    const direction = normalize(vec3f(0.0, 5, 5));
+    const direction = normalize(vec3f(-1.0));
     var dist = 1.0e16;
-    return Light(emission, direction, dist);
+    return Light(emission, -direction, dist);
 }
 
 // Previously sample_emissive_triangle
@@ -555,13 +556,14 @@ fn lambertian(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, t: ptr<functio
         result += hit.ambient;
     }
 
-    const LIGHTS = 2u;
+    const LIGHTS = 1u;
     var dirlight = sample_direction_light();
+    var plight = sample_point_light(hit.position);
     // var area = sample_area_light(hit, t);
     var proj = sample_ideal_projector(hit.position, t);
 
     // create an array of lights and loop through them
-    var lights = array<Light, LIGHTS>(proj, dirlight);
+    var lights = array<Light, LIGHTS>(proj);
     for(var i = 0u; i < LIGHTS; i++) {
         var light = lights[i];
         // shadow and check if there is anything between the hit and light source
@@ -763,69 +765,69 @@ fn intersect_scene(ray: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool
     // Add a plane below the spheres
     // Add 3 more spheres, on the same x,y plane, but different z values
 
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 3.0), 0.5)) {
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*ray).tmax = (*hit).dist;
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = 1;
-        (*hit).emit = false;
+    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 3.0), 0.5)) {
+    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+    //     (*ray).tmax = (*hit).dist;
+    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).shader = 1;
+    //     (*hit).emit = false;
 
-        return true;
-    }
+    //     return true;
+    // }
 
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 1.5), 0.5)) {
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*ray).tmax = (*hit).dist;
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = 1;
-        (*hit).emit = false;
-        return true;
-    }
+    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 1.5), 0.5)) {
+    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+    //     (*ray).tmax = (*hit).dist;
+    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).shader = 1;
+    //     (*hit).emit = false;
+    //     return true;
+    // }
 
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 0.0), 0.5)) {
-        (*ray).tmax = (*hit).dist;
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = 1;
-        (*hit).emit = false;
-        return true;
-    }
-
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -1.5), 0.5)) {
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.5, 0.0), 0.5)) {
         (*ray).tmax = (*hit).dist;
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
         (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = 1;
+        (*hit).shader = 6;
         (*hit).emit = false;
         return true;
     }
 
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -3.0), 0.5)) {
-        (*ray).tmax = (*hit).dist;
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = 1;
-        (*hit).emit = false;
-        return true;
-    }
+    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -1.5), 0.5)) {
+    //     (*ray).tmax = (*hit).dist;
+    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).shader = 1;
+    //     (*hit).emit = false;
+    //     return true;
+    // }
 
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -4.5), 0.5)) {
-        (*ray).tmax = (*hit).dist;
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = 1;
-        (*hit).emit = false;
-        return true;
-    }
+    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -3.0), 0.5)) {
+    //     (*ray).tmax = (*hit).dist;
+    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).shader = 1;
+    //     (*hit).emit = false;
+    //     return true;
+    // }
 
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -6.0), 0.5)) {
-        (*ray).tmax = (*hit).dist;
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = 1;
-        (*hit).emit = false;
-        return true;
-    }
+    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -4.5), 0.5)) {
+    //     (*ray).tmax = (*hit).dist;
+    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).shader = 1;
+    //     (*hit).emit = false;
+    //     return true;
+    // }
+
+    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -6.0), 0.5)) {
+    //     (*ray).tmax = (*hit).dist;
+    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+    //     (*hit).shader = 1;
+    //     (*hit).emit = false;
+    //     return true;
+    // }
 
     // why does this have to be place here? if it is placed before the spheres,
     // everything breaks
@@ -882,8 +884,8 @@ fn texture_linear(texture: texture_2d<f32>, texcoords: vec2f, repeat: bool) -> v
 
 
 fn raytrace(r: ptr<function, Ray>, t: ptr<function, u32>) -> vec4f {
-    //const bgcolor = vec4f(0.1, 0.3, 0.6, 1.0);
-    const bgcolor = vec4f(0.0, 0.0, 0.0, 1.0);
+    const bgcolor = vec4f(0.1, 0.3, 0.6, 1.0);
+    //const bgcolor = vec4f(0.0, 0.0, 0.0, 1.0);
     const max_depth = 10;
     var result = vec3f(0.0);
     var hit = HitInfo(false, 0.0, vec3f(0.0), vec3f(0.0), 0, vec3f(0.0), vec3f(0.0), vec2f(0.0), true, vec3f(1.0), vec3f(0.0));
