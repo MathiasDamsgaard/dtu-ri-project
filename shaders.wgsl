@@ -102,6 +102,17 @@ const BSP_LEAF = 3u;
 var<private> branch_node: array<vec2u, MAX_LEVEL>;
 var<private> branch_ray: array<vec2f, MAX_LEVEL>;
 
+fn sample_point_in_circle(t: ptr<function, u32>, radius: f32) -> vec2f {
+    let r = sqrt(rnd(t)) * (radius); // sqrt to ensure uniform distribution in the circle
+    let theta = 2.0 * PI * rnd(t);
+
+    // Convert to cartesian coordinates
+    let x = r * cos(theta);
+    let y = r * sin(theta);
+
+    return vec2f(x, y);
+}
+
 
 @vertex
 fn main_vs(@builtin(vertex_index) VertexIndex : u32) -> VSOut
@@ -135,15 +146,10 @@ fn get_camera_ray(ipcoords: vec2f, t: ptr<function, u32>) -> Ray {
 
     let fp = e + z_d * w; // focal point
 
-    let r = sqrt(rnd(t)) * (delta/2.0); // sqrt to ensure uniform distribution in the circle
-    let theta = 2.0 * PI * rnd(t);
-
-    // Convert to cartesian coordinates
-    let x = r * cos(theta);
-    let y = r * sin(theta);
+    let xy = sample_point_in_circle(t, delta/2.0);
 
     // Transform to the vector space of the camera
-    let offset = x * b1 + y * b2;
+    let offset = xy.x * b1 + xy.y * b2;
 
     // Implement ray generation
     var ray: Ray;
@@ -181,7 +187,7 @@ fn get_plane_intersection(
 }
 
 
-fn sample_ideal_projector(pos: vec3f) -> Light {
+fn sample_ideal_projector(pos: vec3f, t: ptr<function, u32>) -> Light {
     const position = vec3f(0.0, 6.0, 0.0);
     const updir = vec3f(1.0, 0.0, 0.0);
     const lookAt = vec3f(0.0, 0.0, 0.0);
@@ -192,7 +198,15 @@ fn sample_ideal_projector(pos: vec3f) -> Light {
     let right = normalize(cross(plane_norm, up));
 
     let v = normalize(position - pos);
-    const d = 2.0;
+    const d = 1.0;
+    let z_d = 6.0;
+    let l = 1.0;
+    let f = 1.0 / (1.0 / d + 1.0 / z_d);
+
+    let z = length(position - pos);
+    let delta = f * l * abs((z_d/z - 1)/(z_d - f));
+
+    let xy = sample_point_in_circle(t, delta/2.0);
 
     var intersection = vec3f(0.0);
 
@@ -205,8 +219,11 @@ fn sample_ideal_projector(pos: vec3f) -> Light {
     }
 
     let proj = intersection - plane_real_pos;
-    let x = dot(proj, right);
-    let y = dot(proj, up);
+    var x = dot(proj, right);
+    var y = dot(proj, up);
+
+    x += xy.x;
+    y += xy.y;
 
     if(x < -1.0 || x > 1.0 || y < -1.0 || y > 1.0) {
         return Light(vec3f(0.0), normalize(position-pos), 1.0);
@@ -541,7 +558,7 @@ fn lambertian(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, t: ptr<functio
     const LIGHTS = 2u;
     var dirlight = sample_direction_light();
     // var area = sample_area_light(hit, t);
-    var proj = sample_ideal_projector(hit.position);
+    var proj = sample_ideal_projector(hit.position, t);
 
     // create an array of lights and loop through them
     var lights = array<Light, LIGHTS>(proj, dirlight);

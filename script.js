@@ -44,7 +44,7 @@ async function main() {
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
     });
     device.queue.writeBuffer(attributesBuffer, 0, drawingInfo.attribs);
-    
+
     const indicesBuffer = device.createBuffer({
         size: drawingInfo.indices.byteLength,
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
@@ -98,7 +98,7 @@ async function main() {
     var cam_const = 1;
     var gamma = 2.25;
     var z_d = 5.0;
-    var l = 2.0;
+    var l = 0.1;
 
     var uniforms_f = new Float32Array([aspect, cam_const, gamma, z_d, l]);
     const uniformBuffer_f = device.createBuffer({
@@ -188,7 +188,7 @@ async function main() {
 
     // create texture for the projector
 
-    const texture = await load_texture(device, './data/img.jpg');
+    const texture = await load_texture(device, './data/check.png');
     const textureView = texture.createView();
 
     // Create bind group
