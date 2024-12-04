@@ -191,8 +191,8 @@ fn get_plane_intersection(
 
 
 fn sample_ideal_projector(pos: vec3f, t: ptr<function, u32>) -> Light {
-    const position = vec3f(0.0, 2.0, 0.0);
-    const updir = vec3f(1.0, 0.0, 0.0);
+    const position = vec3f(0.0, 8.0, 0.0);
+    const updir = vec3f(0.0, 0.0, 1.0);
     const lookAt = vec3f(0.0, 0.0, 0.0);
     var dist = length(position - pos);
 
@@ -202,9 +202,12 @@ fn sample_ideal_projector(pos: vec3f, t: ptr<function, u32>) -> Light {
     let right = normalize(cross(plane_norm, up));
 
     let v = normalize(position - pos);
-    const d = 1.0;
-    let z_d = 6.0;
-    let l = 1.0;
+
+    let d = uniforms_f.proj_const;
+    let z_d = uniforms_f.zd_proj;
+    let l = uniforms_f.l_proj;
+
+
     let f = 1.0 / (1.0 / d + 1.0 / z_d);
 
     let z = length(position - pos);
@@ -237,8 +240,8 @@ fn sample_ideal_projector(pos: vec3f, t: ptr<function, u32>) -> Light {
     let ys = (-y + 1.0) / 2.0;
 
     // multiply by texture size and cast to int
-    let ut = xs * 512.0;
-    let vt = ys * 512.0;
+    let ut = xs * f32(uniforms_ui.texture_width);
+    let vt = ys * f32(uniforms_ui.texture_height);
 
 
     let col = textureLoad(projectorTexture, vec2i(i32(ut), i32(vt)), 0).rgb;
@@ -790,7 +793,7 @@ fn intersect_scene(ray: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool
         (*ray).tmax = (*hit).dist;
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
         (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = 6;
+        (*hit).shader = uniforms_ui.shader_1;
         (*hit).emit = false;
         return true;
     }
