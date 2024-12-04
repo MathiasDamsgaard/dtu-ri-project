@@ -130,10 +130,10 @@ async function main() {
         uniforms_f[7] = proj_const;
         document.getElementById('proj-const-output').innerHTML = parseFloat(proj_const).toFixed(1);
 
+        device.queue.writeBuffer(uniformBuffer_f, 0, uniforms_f);
+
         // Reset frame counter
         frame = 0;
-        device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
-        device.queue.writeBuffer(uniformBuffer_f, 0, uniforms_f);
     };
 
     // Uniform float buffer
@@ -154,12 +154,14 @@ async function main() {
     var shader_1 = menu_1.selectedIndex;
     menu_1.addEventListener("change", () => { uniforms_ui[0] = menu_1.selectedIndex;
         device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
+        frame = 0;
         requestAnimationFrame(animate); });
 
     var menu_2 = document.getElementById("menu2");
     var shader_2 = menu_2.selectedIndex;
     menu_2.addEventListener("change", () => { uniforms_ui[1] = menu_2.selectedIndex;
         device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
+        frame = 0;
         requestAnimationFrame(animate); });
 
     // Checkboxes
@@ -169,7 +171,35 @@ async function main() {
         prog_update = !prog_update;
         animate();
     };
-    
+
+    var dir_light = true;
+    document.getElementById("dir_light").onclick = function() {
+        dir_light = !dir_light;
+        uniforms_ui[7] = dir_light;
+        device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
+        frame = 0;
+        animate();
+    };
+
+    var proj_light = true;
+    document.getElementById("proj_light").onclick = function() {
+        proj_light = !proj_light;
+        uniforms_ui[8] = proj_light;
+        device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
+        frame = 0;
+        animate();
+    };
+
+    var indir_light = true;
+    document.getElementById("indir_light").onclick = function() {
+        indir_light = !indir_light;
+        uniforms_ui[9] = indir_light;
+        device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
+        frame = 0;
+        animate();
+    };
+
+
     // Create texture for the projector
     const texture = await load_texture(device, './data/img.jpg');
     const texture_width = texture.width;
@@ -180,7 +210,8 @@ async function main() {
     var width = canvas.width; var height = canvas.height; var frame = 0;
     var uniforms_ui = new Uint32Array([shader_1, shader_2,
                                        width, height, frame,
-                                       texture_width, texture_height]);
+                                       texture_width, texture_height,
+                                       dir_light, proj_light, indir_light]);
     const uniformBuffer_ui = device.createBuffer({
         size: uniforms_ui.byteLength, // number of bytes
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,

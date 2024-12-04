@@ -54,7 +54,10 @@ struct Uniforms_ui {
     height: u32,
     frame: u32,
     texture_width: u32,
-    texture_height: u32
+    texture_height: u32,
+    dir_light: u32,
+    proj_light: u32,
+    indir_light: u32
 };
 
 struct Onb {
@@ -561,17 +564,26 @@ fn lambertian(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, t: ptr<functio
         result += hit.ambient;
     }
 
-    const LIGHTS = 1u;
     var dirlight = sample_direction_light();
     var plight = sample_point_light(hit.position);
     // var area = sample_area_light(hit, t);
     var proj = sample_ideal_projector(hit.position, t);
 
-    // create an array of lights and loop through them
-    var lights = array<Light, LIGHTS>(proj);
-    for(var i = 0u; i < LIGHTS; i++) {
-        var light = lights[i];
-        // shadow and check if there is anything between the hit and light source
+    if(uniforms_ui.dir_light == 1u) {
+        var light = dirlight;
+        var epsilon = 1e-1;
+        var shadow_ray = Ray(hit.position, light.w_i, epsilon, light.dist - epsilon);
+        var shadow_hit = HitInfo(false, 0.0, vec3f(0.0), vec3f(0.0), 0, vec3f(0.0), vec3f(0.0), vec2f(0.0), false, vec3f(1.0), vec3f(0.0));
+
+        if (!intersect_scene(&shadow_ray, &shadow_hit)) {
+            // compute lambertian shading
+            var l_o = hit.diffuse / PI * light.l_i * max(0.0, dot(hit.normal, light.w_i));
+            result += l_o;
+        }
+    }
+
+    if(uniforms_ui.proj_light == 1u) {
+        var light = proj;
         var epsilon = 1e-1;
         var shadow_ray = Ray(hit.position, light.w_i, epsilon, light.dist - epsilon);
         var shadow_hit = HitInfo(false, 0.0, vec3f(0.0), vec3f(0.0), 0, vec3f(0.0), vec3f(0.0), vec2f(0.0), false, vec3f(1.0), vec3f(0.0));
@@ -586,26 +598,28 @@ fn lambertian(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, t: ptr<functio
     // Indirect illumination
 
     // Probability of diffuse reflection
-    var temp = hit.factor * hit.diffuse;
-    var P_d = (temp.r + temp.g + temp.b) / 3.0;
-    var xi = rnd(t);
+    if (uniforms_ui.indir_light == 1u) {
+        var temp = hit.factor * hit.diffuse;
+        var P_d = (temp.r + temp.g + temp.b) / 3.0;
+        var xi = rnd(t);
 
-    if (xi < P_d) {
-        var indirect_dir = sample_cosine_hemisphere(t, hit.normal);
+        if (xi < P_d) {
+            var indirect_dir = sample_cosine_hemisphere(t, hit.normal);
 
-        // This ray will be used in the next iteration of raytrace
-        (*r).origin = hit.position;
-        (*r).direction = indirect_dir;
-        (*r).tmin = 1e-3;
-        (*r).tmax = 1e16;
+            // This ray will be used in the next iteration of raytrace
+            (*r).origin = hit.position;
+            (*r).direction = indirect_dir;
+            (*r).tmin = 1e-3;
+            (*r).tmax = 1e16;
 
-        hit.has_hit = false;  // Continue tracing
-        hit.emit = false; // No longer emitting after first bounce
-        hit.factor = temp / P_d;
-    } else {
-        hit.has_hit = true;
+            hit.has_hit = false;  // Continue tracing
+            hit.emit = false; // No longer emitting after first bounce
+            hit.factor = temp / P_d;
+        } else {
+            hit.has_hit = true;
+        }
     }
-
+    
     return result;
 }
 
