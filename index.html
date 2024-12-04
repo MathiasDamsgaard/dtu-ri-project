@@ -7,44 +7,126 @@
         <script type="text/javascript" src="../common/BspTree_interleaved.js"></script>
         <script type="text/javascript" src="../common/Aabb.js"></script>
         <script type="text/javascript" src="script.js"></script>
+        <link rel="stylesheet" type="text/css" href="style.css">
     </head>
+
     <body>
-        <p>Zoom and aspect ration can both be changed using the key arrows.</p>
-        <canvas id="webgpu-canvas" width="512" height="512">
-            Please use a browser that supports HTML5 canvas.
-        </canvas>
-        <br>
-        <select id="glassMenu" size="1">
-            <option value="0" selected>Default</option>
-            <option value="1">Lambertian</option>
-            <option value="2">Phong</option>
-            <option value="3">Mirror</option>
-            <option value="4">Refraction</option>
-            <option value="5">Glossy</option>
-            <option value="6">Transparent</option>
-        </select>
+        <div class="container">
+            <div class="item">
+                <canvas id="webgpu-canvas" width="512" height="512">
+                    Please use a browser that supports HTML5 canvas.
+                </canvas>
+            </div>
 
-        <select id="matteMenu" size="1">
-            <option value="0">Default</option>
-            <option value="1" selected>Lambertian</option>
-        </select>
+            <div class="item">
+                <div>
+                    <h3>Camera</h3>
+                    <div class="slidecontainer">
+                        <div class="slidecontent">
+                            <div class="name">
+                                <em>l</em>:
+                            </div>
+                            <div>
+                                0
+                                <input class="slider" type="range" min="0.0" max="10.0" value="2.0" step="0.1" id="l-cam">
+                                10:
+                                <output id="l-cam-output">2.0</output>
+                            </div>
+                        </div>
+                        <div class="slidecontent">
+                            <div class="name">
+                                <em>z<sub>d</sub></em>:
+                            </div>
+                            <div>
+                                0
+                                <input class="slider" type="range" min="0.0" max="10.0" value="5.0" step="0.1" id="zd-cam">
+                                10:
+                                <output id="zd-cam-output">5.0</output>
+                            </div>
+                        </div>
+                        <div class="slidecontent">
+                            <div class="name">
+                                <em>cam-const</em>:
+                            </div>
+                            <div>
+                                0
+                                <input class="slider" type="range" min="0.0" max="10.0" value="1.0" step="0.1" id="cam-const">
+                                10:
+                                <output id="cam-const-output">1.0</output>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-        <select id="useTexture" size="1">
-            <option value="0" selected>No</option>
-            <option value="1">Yes</option>
-        </select>
-        <br>
-        <select id="addressmode" size="2">
-            <option value="0">clamp-to-edge</option>
-            <option value="1" selected>repeat</option>
-        </select>
+                <div>
+                    <h3>Projector</h3>
+                    <div class="slidecontainer">
+                        <div class="slidecontent">
+                            <div class="name">
+                                <em>l</em>:
+                            </div>
+                            <div>
+                                0
+                                <input class="slider" type="range" min="0.0" max="10.0" value="2.0" step="0.1" id="l-proj">
+                                10:
+                                <output id="l-proj-output">2.0</output>
+                            </div>
+                        </div>
+                        <div class="slidecontent">
+                            <div class="name">
+                                <em>z<sub>d</sub></em>:
+                            </div>
+                            <div>
+                                0
+                                <input class="slider" type="range" min="0.0" max="10.0" value="5.0" step="0.1" id="zd-proj">
+                                10:
+                                <output id="zd-proj-output">5.0</output>
+                            </div>
+                        </div>
+                        <div class="slidecontent">  
+                            <div class="name">
+                                <em>cam-const</em>:
+                            </div>
+                            <div>
+                                0
+                                <input class="slider" type="range" min="0.0" max="10.0" value="1.0" step="0.1" id="proj-const">
+                                10:
+                                <output id="proj-const-output">1.0</output>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3>Shader selection</h3>
+                    <p>Object 1:</p>
+                    <select id="menu1" size="1">
+                        <option value="1" selected>Lambertian</option>
+                        <option value="3">Mirror</option>
+                        <option value="4">Refraction</option>
+                        <option value="6">Transparent</option>
+                    </select>
+                    <br>
+                    <p>Object 2:</p>
+                    <select id="menu2" size="1">
+                        <option value="1" selected>Lambertian</option>
+                        <option value="3">Mirror</option>
+                        <option value="4">Refraction</option>
+                        <option value="6">Transparent</option>
+                    </select>
+                </div>
 
-        <select id="filtermode" size="2">
-            <option value="0">nearest</option>
-            <option value="1" selected>linear</option>
-        </select>
-
-        <br>
-        <input type="checkbox" id="prog_update" checked> Progressive Updating
+                <div>
+                    <h3>Light toggles</h3>
+                    <input type="checkbox" id="prog_update" checked> Toggle progressive updating
+                    <br>
+                    <input type="checkbox" id="dir_light" checked> Toggle directional light
+                    <br>
+                    <input type="checkbox" id="proj_light" checked> Toggle projector
+                    <br>
+                    <input type="checkbox" id="indir_light" checked> Toggle indirect light
+                </div>
+            </div>
+        </div>
     </body>
 </html>

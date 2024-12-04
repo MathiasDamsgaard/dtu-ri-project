@@ -69,7 +69,7 @@ async function main() {
         return obj;
     });
     device.queue.writeBuffer(materialsBuffer, 0, flatten(parsedMaterials));
-    
+
     const light_indicesBuffer = device.createBuffer({
         size: drawingInfo.light_indices.byteLength,
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
@@ -93,14 +93,55 @@ async function main() {
     });
 
 
+    // Sliders
+    var l_cam = 2.0; var zd_cam = 5.0; var cam_const = 1.0;
+    var l_proj = 2.0; var zd_proj = 5.0; var proj_const = 1.0;
+    document.getElementById("l-cam").oninput = function() {updateSliders()};
+    document.getElementById("zd-cam").oninput = function() {updateSliders()};
+    document.getElementById("cam-const").oninput = function() {updateSliders()};
+    document.getElementById("l-proj").oninput = function() {updateSliders()};
+    document.getElementById("zd-proj").oninput = function() {updateSliders()};
+    document.getElementById("proj-const").oninput = function() {updateSliders()};
+
+    function updateSliders() {
+        // Gets the input value
+        l_cam = document.getElementById("l-cam").value
+        uniforms_f[2] = l_cam;
+        // Displays this value to the html page
+        document.getElementById('l-cam-output').innerHTML = parseFloat(l_cam).toFixed(1);
+
+        zd_cam = document.getElementById("zd-cam").value
+        uniforms_f[3] = zd_cam;
+        document.getElementById('zd-cam-output').innerHTML = parseFloat(zd_cam).toFixed(1);
+
+        cam_const = document.getElementById("cam-const").value
+        uniforms_f[4] = cam_const;
+        document.getElementById('cam-const-output').innerHTML = parseFloat(cam_const).toFixed(1);
+
+        l_proj = document.getElementById("l-proj").value
+        uniforms_f[5] = l_proj;
+        document.getElementById('l-proj-output').innerHTML = parseFloat(l_proj).toFixed(1);
+
+        zd_proj = document.getElementById("zd-proj").value
+        uniforms_f[6] = zd_proj;
+        document.getElementById('zd-proj-output').innerHTML = parseFloat(zd_proj).toFixed(1);
+
+        proj_const = document.getElementById("proj-const").value
+        uniforms_f[7] = proj_const;
+        document.getElementById('proj-const-output').innerHTML = parseFloat(proj_const).toFixed(1);
+
+        // Reset frame counter
+        frame = 0;
+        device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
+        device.queue.writeBuffer(uniformBuffer_f, 0, uniforms_f);
+    };
+
     // Uniform float buffer
     var aspect = canvas.width/canvas.height;
-    var cam_const = 1;
     var gamma = 2.25;
-    var z_d = 5.0;
-    var l = 0.1;
-
-    var uniforms_f = new Float32Array([aspect, cam_const, gamma, z_d, l]);
+    var uniforms_f = new Float32Array([aspect, gamma,
+                                       l_cam, zd_cam, cam_const,
+                                       l_proj, zd_proj, proj_const]);
     const uniformBuffer_f = device.createBuffer({
         size: uniforms_f.byteLength, // number of bytes
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -108,88 +149,44 @@ async function main() {
     device.queue.writeBuffer(uniformBuffer_f, 0, uniforms_f);
 
 
-    // Keyboard inputs
-    document.onkeydown = (event) => {
-        switch(event.key) {
-            case "ArrowRight":
-                uniforms_f[0] += 0.1;
-                device.queue.writeBuffer(uniformBuffer_f, 0, uniforms_f);
-                requestAnimationFrame(animate);
-                break
-            case "ArrowLeft":
-                uniforms_f[0] -= 0.1;
-                device.queue.writeBuffer(uniformBuffer_f, 0, uniforms_f);
-                requestAnimationFrame(animate);
-                break
-            case "ArrowUp":
-                uniforms_f[1] += 0.1;
-                device.queue.writeBuffer(uniformBuffer_f, 0, uniforms_f);
-                requestAnimationFrame(animate);
-                break
-            case "ArrowDown":
-                uniforms_f[1] -= 0.1;
-                device.queue.writeBuffer(uniformBuffer_f, 0, uniforms_f);
-                requestAnimationFrame(animate);
-                break
-        }
-    };
-    
     // Menu selection    
-    var glassMenu = document.getElementById("glassMenu");
-    var glass_shader = glassMenu.selectedIndex;
-    glassMenu.addEventListener("change", () => { uniforms_ui[0] = glassMenu.selectedIndex;
+    var menu_1 = document.getElementById("menu1");
+    var shader_1 = menu_1.selectedIndex;
+    menu_1.addEventListener("change", () => { uniforms_ui[0] = menu_1.selectedIndex;
         device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
         requestAnimationFrame(animate); });
 
-    var matteMenu = document.getElementById("matteMenu");
-    var matte_shader = matteMenu.selectedIndex;
-    matteMenu.addEventListener("change", () => { uniforms_ui[1] = matteMenu.selectedIndex;
+    var menu_2 = document.getElementById("menu2");
+    var shader_2 = menu_2.selectedIndex;
+    menu_2.addEventListener("change", () => { uniforms_ui[1] = menu_2.selectedIndex;
         device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
         requestAnimationFrame(animate); });
 
-    var textureMenu = document.getElementById("useTexture");
-    const use_texture = textureMenu.selectedIndex;
-    textureMenu.addEventListener("click", () => { uniforms_ui[2] = textureMenu.selectedIndex;
-        device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
-        requestAnimationFrame(animate);
-    });
-
-    var addressMenu = document.getElementById("addressmode");
-    const use_repeat = addressMenu.selectedIndex;
-    addressMenu.addEventListener("click", () => { uniforms_ui[3] = addressMenu.selectedIndex;
-        device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
-        requestAnimationFrame(animate);
-    });
-
-    var filterMenu = document.getElementById("filtermode");
-    const use_linear = filterMenu.selectedIndex;
-    filterMenu.addEventListener("click", () => { uniforms_ui[4] = filterMenu.selectedIndex;
-        device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
-        requestAnimationFrame(animate);
-    });
-
+    // Checkboxes
     var prog_update = true;
     document.getElementById("prog_update").onclick = function() {
-        if (prog_update) { console.log(uniforms_ui[7]) };
+        if (prog_update) { console.log(uniforms_ui[4]) };
         prog_update = !prog_update;
         animate();
     };
+    
+    // Create texture for the projector
+    const texture = await load_texture(device, './data/img.jpg');
+    const texture_width = texture.width;
+    const texture_height = texture.height;
+    const textureView = texture.createView();
 
     // Write values to uniform buffers
     var width = canvas.width; var height = canvas.height; var frame = 0;
-    var uniforms_ui = new Uint32Array([glass_shader, matte_shader,
-                                       use_texture, use_repeat, use_linear,
-                                       width, height, frame]);
+    var uniforms_ui = new Uint32Array([shader_1, shader_2,
+                                       width, height, frame,
+                                       texture_width, texture_height]);
     const uniformBuffer_ui = device.createBuffer({
         size: uniforms_ui.byteLength, // number of bytes
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
     device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
 
-    // create texture for the projector
-
-    const texture = await load_texture(device, './data/check.png');
-    const textureView = texture.createView();
 
     // Create bind group
     const bindGroup = device.createBindGroup({
@@ -212,7 +209,7 @@ async function main() {
 
     function animate() {
         if (prog_update) {
-            uniforms_ui[7] = frame; frame += 1;
+            uniforms_ui[4] = frame; frame += 1;
             device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
             requestAnimationFrame(animate);
         }

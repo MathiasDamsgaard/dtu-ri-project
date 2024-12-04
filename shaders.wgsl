@@ -38,21 +38,23 @@ struct Light {
 
 struct Uniforms_f {
     aspect: f32,
-    cam_const: f32,
     gamma: f32,
-    z_d: f32,
-    l: f32
+    l_cam: f32,
+    zd_cam: f32,
+    cam_const: f32,
+    l_proj: f32,
+    zd_proj: f32,
+    proj_const: f32
 };
 
 struct Uniforms_ui {
-    glass_shader: u32,
-    matte_shader: u32,
-    use_texture: u32,
-    use_repeat: u32,
-    use_linear: u32,
+    shader_1: u32,
+    shader_2: u32,
     width: u32,
     height: u32,
-    frame: u32
+    frame: u32,
+    texture_width: u32,
+    texture_height: u32
 };
 
 struct Onb {
@@ -134,8 +136,8 @@ fn get_camera_ray(ipcoords: vec2f, t: ptr<function, u32>) -> Ray {
     const p = vec3f(0.0, 0.0, 0.0); // look-at point (view point)
     const u = vec3f(0.0, 1.0, 0.0); // up-vector (up direction)
     let d = uniforms_f.cam_const; // camera constant
-    let z_d = uniforms_f.z_d; // distance to the focal plane
-    let l = uniforms_f.l; // lens radius
+    let z_d = uniforms_f.zd_cam; // distance to the focal plane
+    let l = uniforms_f.l_cam; // lens radius
     let f = 1.0 / (1.0 / d + 1.0 / z_d); // focal length
     let delta = f * l / (z_d - f); // diameter of circle of confusion
 
@@ -440,7 +442,7 @@ fn intersect_triangle(r: Ray, hit: ptr<function, HitInfo>, v_idx: u32) -> bool {
 
             hit.ambient = tri_material.emission.rgb;
             hit.diffuse = tri_material.color.rgb;
-            hit.shader = uniforms_ui.matte_shader;
+            hit.shader = uniforms_ui.shader_2;
 
             return true;
         }
@@ -739,7 +741,7 @@ fn shade(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, t: ptr<function, u3
 //     const center_s_left = vec3f(420.0, 90.0, 370.0);
 //     const radius_s_left = 90.0;
 //     if (intersect_sphere(*r, hit, center_s_left, radius_s_left)) {
-//         hit.shader = 3; // mirror
+//         hit.shader = uniforms_ui.shader_1;
 //         hit.ext_coeff = vec3f(0.0);
 //         r.tmax = hit.dist;
 //     }
@@ -747,7 +749,7 @@ fn shade(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, t: ptr<function, u3
 //     const center_s_right = vec3f(130.0, 90.0, 250.0);
 //     const radius_s_right = 90.0;
 //     if (intersect_sphere(*r, hit, center_s_right, radius_s_right)) {
-//         hit.shader = 6; // transparent
+//         hit.shader = uniforms_ui.shader_2;
 //         hit.ext_coeff = vec3f(1e-3, 0.9, 1e-3);
 //         r.tmax = hit.dist;
 //     }
