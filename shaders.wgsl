@@ -235,12 +235,17 @@ fn sample_ideal_projector(pos: vec3f, t: ptr<function, u32>) -> Light {
     x += xy.x;
     y += xy.y;
 
-    if(x < -1.0 || x > 1.0 || y < -1.0 || y > 1.0) {
+    let aspect_ratio = f32(uniforms_ui.texture_width) / f32(uniforms_ui.texture_height);
+
+    let scaled_y = y * aspect_ratio;
+
+    if(x < -1.0 || x > 1.0 || scaled_y < -1.0 || scaled_y > 1.0) {
         return Light(vec3f(0.0), normalize(position-pos), dist);
     }
 
     let xs = (-x + 1.0) / 2.0;
-    let ys = (-y + 1.0) / 2.0;
+    let ys = (-scaled_y + 1.0) / 2.0;
+
 
     // multiply by texture size and cast to int
     let ut = xs * f32(uniforms_ui.texture_width);
