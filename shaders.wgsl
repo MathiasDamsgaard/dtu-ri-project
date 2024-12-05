@@ -107,17 +107,6 @@ const BSP_LEAF = 3u;
 var<private> branch_node: array<vec2u, MAX_LEVEL>;
 var<private> branch_ray: array<vec2f, MAX_LEVEL>;
 
-fn sample_point_in_circle(t: ptr<function, u32>, radius: f32) -> vec2f {
-    let r = sqrt(rnd(t)) * (radius); // sqrt to ensure uniform distribution in the circle
-    let theta = 2.0 * PI * rnd(t);
-
-    // Convert to cartesian coordinates
-    let x = r * cos(theta);
-    let y = r * sin(theta);
-
-    return vec2f(x, y);
-}
-
 
 @vertex
 fn main_vs(@builtin(vertex_index) VertexIndex : u32) -> VSOut
@@ -127,6 +116,17 @@ fn main_vs(@builtin(vertex_index) VertexIndex : u32) -> VSOut
     vsOut.position = vec4f(pos[VertexIndex], 0.0, 1.0);
     vsOut.coords = pos[VertexIndex];
     return vsOut;
+}
+
+fn sample_point_in_circle(t: ptr<function, u32>, radius: f32) -> vec2f {
+    let r = sqrt(rnd(t)) * (radius); // sqrt to ensure uniform distribution in the circle
+    let theta = 2.0 * PI * rnd(t);
+
+    // Convert to cartesian coordinates
+    let x = r * cos(theta);
+    let y = r * sin(theta);
+
+    return vec2f(x, y);
 }
 
 fn get_camera_ray(ipcoords: vec2f, t: ptr<function, u32>) -> Ray {
@@ -785,29 +785,6 @@ fn shade(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, t: ptr<function, u3
 // }
 
 fn intersect_scene(ray: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool {
-
-    // Add a plane below the spheres
-    // Add 3 more spheres, on the same x,y plane, but different z values
-
-    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 3.0), 0.5)) {
-    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-    //     (*ray).tmax = (*hit).dist;
-    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).shader = 1;
-    //     (*hit).emit = false;
-
-    //     return true;
-    // }
-
-    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, 1.5), 0.5)) {
-    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-    //     (*ray).tmax = (*hit).dist;
-    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).shader = 1;
-    //     (*hit).emit = false;
-    //     return true;
-    // }
-
     if(intersect_sphere(*ray, hit, vec3f(0.0, 0.5, 0.0), 0.5)) {
         (*ray).tmax = (*hit).dist;
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
@@ -817,53 +794,50 @@ fn intersect_scene(ray: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool
         return true;
     }
 
-    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -1.5), 0.5)) {
-    //     (*ray).tmax = (*hit).dist;
-    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).shader = 1;
-    //     (*hit).emit = false;
-    //     return true;
-    // }
-
-    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -3.0), 0.5)) {
-    //     (*ray).tmax = (*hit).dist;
-    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).shader = 1;
-    //     (*hit).emit = false;
-    //     return true;
-    // }
-
-    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -4.5), 0.5)) {
-    //     (*ray).tmax = (*hit).dist;
-    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).shader = 1;
-    //     (*hit).emit = false;
-    //     return true;
-    // }
-
-    // if(intersect_sphere(*ray, hit, vec3f(0.0, 0.0, -6.0), 0.5)) {
-    //     (*ray).tmax = (*hit).dist;
-    //     (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-    //     (*hit).shader = 1;
-    //     (*hit).emit = false;
-    //     return true;
-    // }
-
-    // why does this have to be place here? if it is placed before the spheres,
-    // everything breaks
-    if(intersect_plane(*ray, hit, vec3f(0.0, 0.0, 0.0), vec3f(0.0, 1.0, 0.0), Onb(vec3f(1.0, 0.0, 0.0), vec3f(0.0, 0.0, 1.0), vec3f(0.0, 1.0, 0.0)))) {
+    if(intersect_sphere(*ray, hit, vec3f(1.5, 0.5, 0.0), 0.5)) {
         (*ray).tmax = (*hit).dist;
-        (*hit).ambient = vec3f(0.2, 0.1, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.1, 0.1);
-        (*hit).shader = 1;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = uniforms_ui.shader_2;
         (*hit).emit = false;
         return true;
     }
 
+    if(intersect_sphere(*ray, hit, vec3f(-1.5, 0.5, 0.0), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = uniforms_ui.shader_2;
+        (*hit).emit = false;
+        return true;
+    }
+
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.5, 1.5), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = uniforms_ui.shader_1;
+        (*hit).emit = false;
+        return true;
+    }
+
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.5, -1.5), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = uniforms_ui.shader_1;
+        (*hit).emit = false;
+        return true;
+    }
+
+    if(intersect_plane(*ray, hit, vec3f(0.0, 0.0, 0.0), vec3f(0.0, 1.0, 0.0), Onb(vec3f(1.0, 0.0, 0.0), vec3f(0.0, 0.0, 1.0), vec3f(0.0, 1.0, 0.0)))) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.1, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.1, 0.1);
+        (*hit).shader = 1; // lambertian
+        (*hit).emit = false;
+        return true;
+    }
 
     return false;
 }
