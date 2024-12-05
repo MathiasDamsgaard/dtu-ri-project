@@ -205,7 +205,7 @@ async function main() {
 
 
     // Create texture for the projector
-    const texture = await load_texture(device, './data/img.jpg');
+    const texture = await load_texture(device, './data/check169.png');
     const texture_width = texture.width;
     const texture_height = texture.height;
     const textureView = texture.createView();

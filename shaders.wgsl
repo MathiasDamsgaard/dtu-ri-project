@@ -798,7 +798,7 @@ fn intersect_scene(ray: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool
         (*ray).tmax = (*hit).dist;
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
         (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = uniforms_ui.shader_2;
+        (*hit).shader = uniforms_ui.shader_1;
         (*hit).emit = false;
         return true;
     }
@@ -807,7 +807,7 @@ fn intersect_scene(ray: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool
         (*ray).tmax = (*hit).dist;
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
         (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = uniforms_ui.shader_2;
+        (*hit).shader = uniforms_ui.shader_1;
         (*hit).emit = false;
         return true;
     }
@@ -826,6 +826,42 @@ fn intersect_scene(ray: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
         (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
         (*hit).shader = uniforms_ui.shader_1;
+        (*hit).emit = false;
+        return true;
+    }
+
+    if(intersect_sphere(*ray, hit, vec3f(-1.5, 0.5, -1.5), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = uniforms_ui.shader_2;
+        (*hit).emit = false;
+        return true;
+    }
+
+    if(intersect_sphere(*ray, hit, vec3f(1.5, 0.5, -1.5), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = uniforms_ui.shader_2;
+        (*hit).emit = false;
+        return true;
+    }
+
+    if(intersect_sphere(*ray, hit, vec3f(1.5, 0.5, 1.5), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = uniforms_ui.shader_2;
+        (*hit).emit = false;
+        return true;
+    }
+
+    if(intersect_sphere(*ray, hit, vec3f(-1.5, 0.5, 1.5), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = uniforms_ui.shader_2;
         (*hit).emit = false;
         return true;
     }
