@@ -194,7 +194,7 @@ async function main() {
         animate();
     };
 
-    var indir_light = true;
+    var indir_light = false;
     document.getElementById("indir_light").onclick = function() {
         indir_light = !indir_light;
         uniforms_ui[9] = indir_light;
