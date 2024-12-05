@@ -94,8 +94,12 @@ async function main() {
 
 
     // Sliders
-    var l_cam = 2.0; var zd_cam = 5.0; var cam_const = 1.0;
-    var l_proj = 2.0; var zd_proj = 5.0; var proj_const = 1.0;
+    var l_cam = document.getElementById("l-cam").value;
+    var zd_cam = document.getElementById("zd-cam").value;
+    var cam_const = document.getElementById("cam-const").value;
+    var l_proj = document.getElementById("l-proj").value;
+    var zd_proj = document.getElementById("zd-proj").value;
+    var proj_const = document.getElementById("proj-const").value;
     document.getElementById("l-cam").oninput = function() {updateSliders()};
     document.getElementById("zd-cam").oninput = function() {updateSliders()};
     document.getElementById("cam-const").oninput = function() {updateSliders()};
