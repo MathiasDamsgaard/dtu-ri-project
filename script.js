@@ -151,15 +151,15 @@ async function main() {
 
     // Menu selection    
     var menu_1 = document.getElementById("menu1");
-    var shader_1 = menu_1.selectedIndex;
-    menu_1.addEventListener("change", () => { uniforms_ui[0] = menu_1.selectedIndex;
+    var shader_1 = menu_1.value;
+    menu_1.addEventListener("change", () => { uniforms_ui[0] = menu_1.value;
         device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
         frame = 0;
         requestAnimationFrame(animate); });
 
     var menu_2 = document.getElementById("menu2");
-    var shader_2 = menu_2.selectedIndex;
-    menu_2.addEventListener("change", () => { uniforms_ui[1] = menu_2.selectedIndex;
+    var shader_2 = menu_2.value;
+    menu_2.addEventListener("change", () => { uniforms_ui[1] = menu_2.value;
         device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
         frame = 0;
         requestAnimationFrame(animate); });
