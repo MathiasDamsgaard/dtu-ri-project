@@ -50,6 +50,7 @@ struct Uniforms_f {
 struct Uniforms_ui {
     shader_1: u32,
     shader_2: u32,
+    shader_3: u32,
     width: u32,
     height: u32,
     frame: u32,
@@ -785,33 +786,6 @@ fn shade(r: ptr<function, Ray>, hit: ptr<function, HitInfo>, t: ptr<function, u3
 // }
 
 fn intersect_scene(ray: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool {
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.5, 0.0), 0.5)) {
-        (*ray).tmax = (*hit).dist;
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = uniforms_ui.shader_1;
-        (*hit).emit = false;
-        return true;
-    }
-
-    if(intersect_sphere(*ray, hit, vec3f(1.5, 0.5, 0.0), 0.5)) {
-        (*ray).tmax = (*hit).dist;
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = uniforms_ui.shader_1;
-        (*hit).emit = false;
-        return true;
-    }
-
-    if(intersect_sphere(*ray, hit, vec3f(-1.5, 0.5, 0.0), 0.5)) {
-        (*ray).tmax = (*hit).dist;
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = uniforms_ui.shader_1;
-        (*hit).emit = false;
-        return true;
-    }
-
     if(intersect_sphere(*ray, hit, vec3f(0.0, 0.5, 1.5), 0.5)) {
         (*ray).tmax = (*hit).dist;
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
@@ -821,7 +795,7 @@ fn intersect_scene(ray: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool
         return true;
     }
 
-    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.5, -1.5), 0.5)) {
+if(intersect_sphere(*ray, hit, vec3f(1.5, 0.5, 1.5), 0.5)) {
         (*ray).tmax = (*hit).dist;
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
         (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
@@ -830,11 +804,47 @@ fn intersect_scene(ray: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool
         return true;
     }
 
-    if(intersect_sphere(*ray, hit, vec3f(-1.5, 0.5, -1.5), 0.5)) {
+    if(intersect_sphere(*ray, hit, vec3f(-1.5, 0.5, 1.5), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = uniforms_ui.shader_1;
+        (*hit).emit = false;
+        return true;
+    }
+
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.5, 0.0), 0.5)) {
         (*ray).tmax = (*hit).dist;
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
         (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
         (*hit).shader = uniforms_ui.shader_2;
+        (*hit).emit = false;
+        return true;
+    }
+
+    if(intersect_sphere(*ray, hit, vec3f(1.5, 0.5, 0.0), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = uniforms_ui.shader_2;
+        (*hit).emit = false;
+        return true;
+    }
+
+    if(intersect_sphere(*ray, hit, vec3f(-1.5, 0.5, 0.0), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = uniforms_ui.shader_2;
+        (*hit).emit = false;
+        return true;
+    }
+
+    if(intersect_sphere(*ray, hit, vec3f(0.0, 0.5, -1.5), 0.5)) {
+        (*ray).tmax = (*hit).dist;
+        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
+        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
+        (*hit).shader = uniforms_ui.shader_3;
         (*hit).emit = false;
         return true;
     }
@@ -843,25 +853,16 @@ fn intersect_scene(ray: ptr<function, Ray>, hit: ptr<function, HitInfo>) -> bool
         (*ray).tmax = (*hit).dist;
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
         (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = uniforms_ui.shader_2;
+        (*hit).shader = uniforms_ui.shader_3;
         (*hit).emit = false;
         return true;
     }
 
-    if(intersect_sphere(*ray, hit, vec3f(1.5, 0.5, 1.5), 0.5)) {
+if(intersect_sphere(*ray, hit, vec3f(-1.5, 0.5, -1.5), 0.5)) {
         (*ray).tmax = (*hit).dist;
         (*hit).ambient = vec3f(0.2, 0.6, 0.1);
         (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = uniforms_ui.shader_2;
-        (*hit).emit = false;
-        return true;
-    }
-
-    if(intersect_sphere(*ray, hit, vec3f(-1.5, 0.5, 1.5), 0.5)) {
-        (*ray).tmax = (*hit).dist;
-        (*hit).ambient = vec3f(0.2, 0.6, 0.1);
-        (*hit).diffuse = vec3f(0.2, 0.6, 0.1);
-        (*hit).shader = uniforms_ui.shader_2;
+        (*hit).shader = uniforms_ui.shader_3;
         (*hit).emit = false;
         return true;
     }

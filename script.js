@@ -168,10 +168,17 @@ async function main() {
         frame = 0;
         requestAnimationFrame(animate); });
 
+    var menu_3 = document.getElementById("menu3");
+    var shader_3 = menu_3.value;
+    menu_3.addEventListener("change", () => { uniforms_ui[2] = menu_3.value;
+        device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
+        frame = 0;
+        requestAnimationFrame(animate); });
+
     // Checkboxes
     var prog_update = true;
     document.getElementById("prog_update").onclick = function() {
-        if (prog_update) { console.log(uniforms_ui[4]) };
+        if (prog_update) { console.log(uniforms_ui[5]) };
         prog_update = !prog_update;
         animate();
     };
@@ -179,7 +186,7 @@ async function main() {
     var dir_light = true;
     document.getElementById("dir_light").onclick = function() {
         dir_light = !dir_light;
-        uniforms_ui[7] = dir_light;
+        uniforms_ui[8] = dir_light;
         device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
         frame = 0;
         animate();
@@ -188,7 +195,7 @@ async function main() {
     var proj_light = true;
     document.getElementById("proj_light").onclick = function() {
         proj_light = !proj_light;
-        uniforms_ui[8] = proj_light;
+        uniforms_ui[9] = proj_light;
         device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
         frame = 0;
         animate();
@@ -197,7 +204,7 @@ async function main() {
     var indir_light = false;
     document.getElementById("indir_light").onclick = function() {
         indir_light = !indir_light;
-        uniforms_ui[9] = indir_light;
+        uniforms_ui[10] = indir_light;
         device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
         frame = 0;
         animate();
@@ -212,7 +219,7 @@ async function main() {
 
     // Write values to uniform buffers
     var width = canvas.width; var height = canvas.height; var frame = 0;
-    var uniforms_ui = new Uint32Array([shader_1, shader_2,
+    var uniforms_ui = new Uint32Array([shader_1, shader_2, shader_3,
                                        width, height, frame,
                                        texture_width, texture_height,
                                        dir_light, proj_light, indir_light]);
@@ -244,7 +251,7 @@ async function main() {
 
     function animate() {
         if (prog_update) {
-            uniforms_ui[4] = frame; frame += 1;
+            uniforms_ui[5] = frame; frame += 1;
             device.queue.writeBuffer(uniformBuffer_ui, 0, uniforms_ui);
             requestAnimationFrame(animate);
         }
