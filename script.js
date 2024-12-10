@@ -33,7 +33,7 @@ async function main() {
     });
 
     // Create buffers for object data
-    const obj_filename = '../data/objects/CornellBox.obj';
+    const obj_filename = './data/objects/CornellBox.obj';
     const drawingInfo = await readOBJFile(obj_filename, 1, true); // file name, scale, ccw vertices
 
     let buffers = new Object();
